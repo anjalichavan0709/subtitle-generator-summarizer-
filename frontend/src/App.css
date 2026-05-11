@@ -1,0 +1,423 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #f8fafc;
+  background: #050713;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(236, 72, 153, 0.18), transparent 30%),
+    radial-gradient(circle at 88% 8%, rgba(6, 182, 212, 0.16), transparent 28%),
+    radial-gradient(circle at 48% 92%, rgba(124, 58, 237, 0.18), transparent 30%),
+    linear-gradient(135deg, #050713 0%, #0b1024 48%, #050713 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  border: 0;
+}
+
+.appShell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 72px;
+}
+
+.hero {
+  text-align: center;
+  padding: 30px 0 32px;
+}
+
+.heroBadge {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(236, 72, 153, 0.42);
+  color: #f0abfc;
+  background: rgba(236, 72, 153, 0.09);
+  border-radius: 999px;
+  padding: 8px 13px;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  box-shadow: 0 0 24px rgba(236, 72, 153, 0.2);
+}
+
+.hero h1 {
+  margin: 18px auto 16px;
+  max-width: 900px;
+  color: #f8fafc;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+  text-shadow:
+    0 0 24px rgba(125, 211, 252, 0.24),
+    0 0 44px rgba(236, 72, 153, 0.14);
+}
+
+.hero p {
+  max-width: 790px;
+  margin: 0 auto;
+  color: #cbd5e1;
+  font-size: 1.04rem;
+  line-height: 1.75;
+}
+
+.toolGrid {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.resultStack {
+  margin-top: 18px;
+  display: grid;
+  gap: 18px;
+}
+
+.twoColumn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.panel {
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(2, 6, 23, 0.66));
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.35),
+    inset 0 0 34px rgba(59, 130, 246, 0.07);
+  backdrop-filter: blur(18px);
+}
+
+.uploadPanel {
+  border-color: rgba(236, 72, 153, 0.35);
+}
+
+.statusPanel {
+  border-color: rgba(6, 182, 212, 0.28);
+}
+
+.summaryPanel {
+  border-color: rgba(34, 197, 94, 0.26);
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.13);
+  margin-bottom: 17px;
+}
+
+.stepBadge {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  border: 1px solid rgba(236, 72, 153, 0.58);
+  color: #f0abfc;
+  background: rgba(236, 72, 153, 0.1);
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.32);
+  font-weight: 950;
+  font-size: 0.88rem;
+}
+
+.panelLabel {
+  margin: 0 0 4px;
+  color: #7dd3fc;
+  font-size: 0.73rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.panel h2 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.helperText,
+.smallNote {
+  color: #94a3b8;
+  line-height: 1.65;
+}
+
+.smallNote {
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+}
+
+.uploadBox {
+  display: grid;
+  gap: 15px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px dashed rgba(236, 72, 153, 0.43);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at center, rgba(236, 72, 153, 0.1), transparent 45%),
+    rgba(2, 6, 23, 0.38);
+}
+
+input[type="file"] {
+  width: 100%;
+  color: #cbd5e1;
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 16px;
+  padding: 13px;
+  cursor: pointer;
+}
+
+input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  border: 0;
+  border-radius: 11px;
+  padding: 9px 13px;
+  color: white;
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  cursor: pointer;
+  font-weight: 900;
+}
+
+.selectedFile {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.selectedFile span,
+.outputGrid span,
+.metricCard span {
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.selectedFile strong {
+  color: #f8fafc;
+  overflow-wrap: anywhere;
+}
+
+.primaryButton {
+  width: 100%;
+  padding: 15px 18px;
+  border-radius: 16px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ec4899, #8b5cf6, #06b6d4);
+  cursor: pointer;
+  font-weight: 950;
+  box-shadow: 0 0 28px rgba(236, 72, 153, 0.34);
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.primaryButton:hover:not(:disabled),
+.ghostButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.primaryButton:disabled,
+.ghostButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.errorBox {
+  margin-top: 16px;
+  color: #fecaca;
+  background: rgba(239, 68, 68, 0.13);
+  border: 1px solid rgba(239, 68, 68, 0.32);
+  padding: 13px;
+  border-radius: 14px;
+}
+
+.statusList {
+  display: grid;
+  gap: 12px;
+}
+
+.statusItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.statusItem span {
+  color: #e5e7eb;
+}
+
+.statusItem strong {
+  color: #86efac;
+  font-size: 0.86rem;
+}
+
+.statusItem.active {
+  border-color: rgba(250, 204, 21, 0.35);
+  box-shadow: 0 0 20px rgba(250, 204, 21, 0.09);
+}
+
+.statusItem.active strong {
+  color: #fde68a;
+}
+
+.summaryText {
+  margin: 0 0 16px;
+  color: #dbeafe;
+  font-size: 1.04rem;
+  line-height: 1.85;
+  background: rgba(2, 6, 23, 0.44);
+  border: 1px solid rgba(34, 197, 94, 0.16);
+  padding: 18px;
+  border-radius: 18px;
+}
+
+.previewBox {
+  margin: 0;
+  min-height: 260px;
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre-wrap;
+  line-height: 1.65;
+  color: #dbeafe;
+  background: rgba(2, 6, 23, 0.66);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.buttonRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 13px;
+}
+
+.ghostButton {
+  width: fit-content;
+  padding: 11px 14px;
+  border-radius: 13px;
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.1);
+  border: 1px solid rgba(14, 165, 233, 0.28);
+  cursor: pointer;
+  font-weight: 850;
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.metricCard {
+  min-height: 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.72));
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.metricCard strong {
+  display: block;
+  color: #7dd3fc;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+}
+
+.outputGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.outputGrid div {
+  padding: 15px;
+  border-radius: 17px;
+  background: rgba(2, 6, 23, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+}
+
+.outputGrid p {
+  margin: 8px 0 0;
+  color: #cbd5e1;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 960px) {
+  .toolGrid,
+  .twoColumn {
+    grid-template-columns: 1fr;
+  }
+
+  .metricsGrid,
+  .outputGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .appShell {
+    width: min(100% - 22px, 1180px);
+    padding-top: 24px;
+  }
+
+  .hero {
+    padding-top: 14px;
+  }
+
+  .panel {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .metricsGrid,
+  .outputGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .buttonRow {
+    flex-direction: column;
+  }
+
+  .ghostButton {
+    width: 100%;
+  }
+}

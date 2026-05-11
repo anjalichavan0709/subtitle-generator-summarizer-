@@ -1,0 +1,53 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files
+.env
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Conda / Jupyter
+.ipynb_checkpoints/
+
+# Logs
+logs/
+*.log
+backend/logs/
+
+# Large video/audio files
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.wav
+*.mp3
+*.m4a
+
+# Generated outputs
+backend/outputs/audio/
+backend/outputs/transcripts/
+backend/outputs/subtitles/
+backend/outputs/summaries/
+
+# Model/cache files
+.cache/
+models/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/

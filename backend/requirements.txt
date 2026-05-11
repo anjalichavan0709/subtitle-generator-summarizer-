@@ -1,0 +1,15 @@
+fastapi
+uvicorn
+python-multipart
+openai-whisper
+transformers
+torch
+jiwer
+rouge-score
+pandas
+python-dotenv
+pydantic
+tqdm
+sentencepiece
+notebook
+ipykernel
