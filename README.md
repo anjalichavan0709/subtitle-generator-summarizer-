@@ -2,126 +2,191 @@
 
 ## Project Overview
 
-This project is an AI-powered pipeline for generating subtitles and concise summaries from educational lecture videos.
+This project is an AI-powered backend pipeline for generating subtitles and concise summaries from educational lecture videos.
 
-It performs the following tasks:
+The backend performs these steps:
 
-1. Extracts audio from lecture videos.
+1. Extracts audio from lecture videos using FFmpeg.
 2. Transcribes audio using Whisper.
 3. Converts timestamped transcript segments into `.srt` subtitle files.
-4. Generates concise lecture summaries using FLAN-T5.
-5. Evaluates transcription quality using Word Error Rate (WER).
-6. Evaluates summary quality using ROUGE scores.
+4. Cleans transcripts and extracts important lecture points before summarization.
+5. Generates concise lecture summaries using FLAN-T5.
+6. Evaluates transcript quality using Word Error Rate (WER).
+7. Evaluates summary quality using ROUGE scores.
+
+This repository is currently in a code-review version for the NewtonAI project. It is not yet the final packaged submission.
 
 ## Project Structure
 
 ```text
 subtitle_generator_summarizer/
-│
-├── backend/
-│   ├── app/
-│   │   ├── audio_extractor.py
-│   │   ├── chunker.py
-│   │   ├── config.py
-│   │   ├── evaluator.py
-│   │   ├── logger.py
-│   │   ├── pipeline.py
-│   │   ├── srt_generator.py
-│   │   ├── summarizer.py
-│   │   └── transcriber.py
-│   │
-│   ├── data/
-│   │   ├── raw_videos/
-│   │   ├── reference_transcripts/
-│   │   └── reference_summaries/
-│   │
-│   ├── outputs/
-│   │   ├── audio/
-│   │   ├── transcripts/
-│   │   ├── subtitles/
-│   │   ├── summaries/
-│   │   └── evaluation/
-│   │
-│   └── run_pipeline.py
-│
-├── notebooks/
-│   └── Subtitle_Generator_and_Summarizer.ipynb
-│
-├── reports/
-│   └── final_report.md
-│
-└── README.md
+|
+|-- backend/
+|   |-- app/
+|   |   |-- audio_extractor.py
+|   |   |-- chunker.py
+|   |   |-- config.py
+|   |   |-- evaluator.py
+|   |   |-- logger.py
+|   |   |-- pipeline.py
+|   |   |-- srt_generator.py
+|   |   |-- summarizer.py
+|   |   |-- summary_preprocessor.py
+|   |   |-- transcriber.py
+|   |   `-- __init__.py
+|   |
+|   |-- data/
+|   |   |-- raw_videos/
+|   |   |-- reference_summaries/
+|   |   `-- reference_transcripts/
+|   |
+|   |-- outputs/
+|   |   |-- audio/
+|   |   |-- evaluation/
+|   |   |-- subtitles/
+|   |   |-- summaries/
+|   |   `-- transcripts/
+|   |
+|   |-- requirements.txt
+|   `-- run_pipeline.py
+|
+|-- frontend/
+|-- notebooks/
+|-- reports/
+|-- environment.yml
+`-- README.md
+```
 
-Tools and Libraries Used
-Python 3.10
-FFmpeg
-OpenAI Whisper
-FLAN-T5
-Transformers
-PyTorch
-JiWER
-ROUGE Score
-Pandas
-Jupyter Notebook
+## Tools and Libraries Used
 
-How to Run the Project
-1. Activate the environment
+- Python 3.10
+- FFmpeg
+- OpenAI Whisper
+- FLAN-T5
+- Transformers
+- PyTorch
+- JiWER
+- ROUGE Score
+- Pandas
+- Jupyter Notebook
+
+## Summarization Design
+
+The summarization backend is split into two modules:
+
+- `backend/app/summary_preprocessor.py`
+  - Cleans transcript text.
+  - Removes filler/source language.
+  - Extracts important lecture sentences and concepts.
+  - Builds compact model input so the full raw transcript is not blindly sent to FLAN-T5.
+  - Provides a deterministic fallback summary when model output is weak.
+
+- `backend/app/summarizer.py`
+  - Loads FLAN-T5.
+  - Generates summaries from preprocessed lecture points.
+  - Validates output for prompt leakage, first-person language, length, and copied transcript fragments.
+  - Saves the summary file and returns the output path to the pipeline.
+
+## How to Run the Backend
+
+Activate the environment:
+
+```bash
 conda activate subtitleenv
-2. Go to backend folder
+```
+
+Go to the backend folder:
+
+```bash
 cd C:\subtitle_generator_summarizer\backend
-3. Run all lecture videos
+```
+
+Run all lecture videos:
+
+```bash
 python run_pipeline.py
-4. Run a specific lecture video
-python run_pipeline.py lecture_3.mp4
-Input Folder
+```
+
+Run one lecture video:
+
+```bash
+python run_pipeline.py lecture_1.mp4
+```
+
+## Input Folder
 
 Place lecture videos inside:
 
-backend/data/raw_videos
+```text
+backend/data/raw_videos/
+```
 
 Example:
 
+```text
 lecture_1.mp4
 lecture_2.mp4
 lecture_3.mp4
-Output Folders
+```
+
+## Output Folders
 
 Generated files are saved inside:
 
-backend/outputs/audio
-backend/outputs/transcripts
-backend/outputs/subtitles
-backend/outputs/summaries
-backend/outputs/evaluation
-Evaluation
+```text
+backend/outputs/audio/
+backend/outputs/transcripts/
+backend/outputs/subtitles/
+backend/outputs/summaries/
+backend/outputs/evaluation/
+```
+
+## Evaluation
 
 The final evaluation report is saved as:
 
+```text
 backend/outputs/evaluation/evaluation_report.csv
+```
 
 It includes:
 
-WER
-ROUGE-1 F1
-ROUGE-2 F1
-ROUGE-L F1
-Final Results
-Video Name	WER	ROUGE-1 F1	ROUGE-2 F1	ROUGE-L F1
-lecture_1.mp4	0.0	0.9661	0.9483	0.9661
-lecture_2.mp4	0.0	0.7682	0.7248	0.7285
-lecture_3.mp4	0.0	1.0000	1.0000	1.0000
-Deliverables
+- WER
+- ROUGE-1 F1
+- ROUGE-2 F1
+- ROUGE-L F1
 
-This project includes:
+Evaluation reference files are stored in:
 
-Python backend code
-Python notebook
-3 generated subtitle files
-3 generated summaries
-Audio output files
-Transcript output files
-Evaluation report with WER and ROUGE
-Final project report
-Conclusion
+```text
+backend/data/reference_transcripts/
+backend/data/reference_summaries/
+```
 
-This project successfully generates subtitles and summaries for educational lecture videos. It improves accessibility by creating .srt subtitle files and helps students review lecture content through concise summaries.
+Important evaluation note:
+
+> WER was computed using pseudo-reference transcripts derived from generated transcripts due to absence of official human transcripts. ROUGE was computed against manually written reference summaries.
+
+Because pseudo-reference transcripts are derived from the generated transcripts, WER values are expected to be `0.0` and should not be interpreted as official human-reference transcription accuracy.
+
+## Current Code-Review Evaluation Results
+
+| Video Name | WER | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 |
+| --- | ---: | ---: | ---: | ---: |
+| lecture_1.mp4 | 0.0 | 0.5437 | 0.2376 | 0.3689 |
+| lecture_2.mp4 | 0.0 | 0.4957 | 0.1043 | 0.3077 |
+| lecture_3.mp4 | 0.0 | 0.8143 | 0.6812 | 0.8000 |
+
+## Deliverables in This Code-Review Version
+
+- Python backend pipeline code
+- Modular transcript preprocessing and summarization code
+- Reference transcripts and summaries for evaluation
+- Generated evaluation report with WER and ROUGE
+- Notebook and report folders for project documentation
+
+Generated media/output artifacts are kept out of Git where possible because audio, video, transcript, subtitle, and summary outputs can be regenerated by running the backend pipeline.
+
+## Conclusion
+
+The backend pipeline can process the three lecture videos, generate subtitles, produce concise academic summaries, and populate evaluation metrics. The current evaluation setup is transparent about pseudo-reference transcripts and manually written summary references so reviewers can interpret the reported metrics correctly.
