@@ -1,43 +1,70 @@
-# Submission Checklist
+# NewtonAI Submission Checklist
+
+## Current Status
+
+This project is ready for final packaging after the ZIP file is created. The backend pipeline has been run successfully for three lecture videos, and all required generated output types are present.
 
 ## NewtonAI Required Deliverables
 
-- [x] Python notebook with transcription and summarization workflow
-- [x] Code for transcript-to-SRT conversion
-- [x] 3 subtitle files
-- [x] 3 summaries
-- [x] Audio output files
-- [x] Transcript output files
-- [x] Subtitle output files
-- [x] Final report with WER and ROUGE scores
-- [x] Evaluation report CSV
-- [x] Zip folder with code and outputs
+| Requirement | Status | Notes |
+| --- | --- | --- |
+| Python notebook with transcription and summarization workflow | Complete | `notebooks/Subtitle_Generator_and_Summarizer.ipynb` exists. |
+| Backend pipeline code | Complete | Source files are in `backend/app/` and `backend/run_pipeline.py`. |
+| Code for transcript-to-SRT conversion | Complete | Implemented in `backend/app/srt_generator.py`. |
+| Audio extraction from 3 lecture videos | Complete | 3 `.wav` files exist in `backend/outputs/audio/`. |
+| Transcript output files | Complete | 3 transcript `.txt` files exist in `backend/outputs/transcripts/`. |
+| Subtitle output files | Complete | 3 `.srt` files exist in `backend/outputs/subtitles/`. |
+| Summary output files | Complete | 3 summary `.txt` files exist in `backend/outputs/summaries/`. |
+| WER and ROUGE evaluation | Complete with caveat | WER uses pseudo-reference transcripts; ROUGE uses manually written reference summaries. |
+| Evaluation report CSV | Complete | `backend/outputs/evaluation/evaluation_report.csv` is populated. |
+| Final report | Complete | `reports/final_report.md` exists after this documentation update. |
+| Final ZIP folder | Pending | Do not mark complete until the ZIP is created. |
+| 10-15 minute video duration target | Limitation/Risk | Current videos appear longer based on SRT end timestamps. Pipeline can process shorter videos with the same workflow. |
 
 ## Project Files
 
-- [x] README.md
-- [x] requirements.txt
-- [x] reports/final_report.md
-- [x] notebooks/Subtitle_Generator_and_Summarizer.ipynb
-- [x] backend/app source code
-- [x] backend/run_pipeline.py
+| File or Folder | Status |
+| --- | --- |
+| `README.md` | Complete |
+| `environment.yml` | Complete |
+| `backend/requirements.txt` | Complete |
+| `backend/app/` | Complete |
+| `backend/run_pipeline.py` | Complete |
+| `notebooks/Subtitle_Generator_and_Summarizer.ipynb` | Complete |
+| `reports/final_report.md` | Complete |
+| `backend/data/reference_transcripts/` | Complete |
+| `backend/data/reference_summaries/` | Complete |
 
-## Output Folders
+## Output Files
 
-- [x] backend/outputs/audio
-- [x] backend/outputs/transcripts
-- [x] backend/outputs/subtitles
-- [x] backend/outputs/summaries
-- [x] backend/outputs/evaluation
+| Output Type | Files |
+| --- | --- |
+| Audio | `lecture_1.wav`, `lecture_2.wav`, `lecture_3.wav` |
+| Transcripts | `lecture_1_transcript.txt`, `lecture_2_transcript.txt`, `lecture_3_transcript.txt` |
+| Subtitles | `lecture_1.srt`, `lecture_2.srt`, `lecture_3.srt` |
+| Summaries | `lecture_1_summary.txt`, `lecture_2_summary.txt`, `lecture_3_summary.txt` |
+| Evaluation | `evaluation_report.csv` |
 
 ## Final Evaluation Results
 
 | Video Name | WER | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 |
-|---|---:|---:|---:|---:|
-| lecture_1.mp4 | 0.0 | 0.9661 | 0.9483 | 0.9661 |
-| lecture_2.mp4 | 0.0 | 0.7682 | 0.7248 | 0.7285 |
-| lecture_3.mp4 | 0.0 | 1.0000 | 1.0000 | 1.0000 |
+| --- | ---: | ---: | ---: | ---: |
+| `lecture_1.mp4` | 0.0 | 0.5437 | 0.2376 | 0.3689 |
+| `lecture_2.mp4` | 0.0 | 0.4957 | 0.1043 | 0.3077 |
+| `lecture_3.mp4` | 0.0 | 0.8143 | 0.6812 | 0.8000 |
 
-## Notes
+## Evaluation Notes
 
-The project follows a modular backend architecture and includes a notebook, report, generated outputs, and evaluation metrics as required by NewtonAI.
+- WER was computed using pseudo-reference transcripts derived from generated transcripts because official human transcripts were not available.
+- ROUGE was computed against manually written reference summaries.
+- Because pseudo-reference transcripts were used, WER values of `0.0` should not be interpreted as official human-reference transcription accuracy.
+
+## Remaining Before Final Submission
+
+- Create the final ZIP folder containing code, notebook, report, references, generated outputs, and setup files.
+- Decide whether raw videos should be included in the ZIP based on file-size and licensing constraints.
+- Keep the video duration limitation documented in the README and final report.
+
+## Final Submission Status
+
+Final submission is not yet complete because the ZIP package has not been created.

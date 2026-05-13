@@ -1,0 +1,209 @@
+# NewtonAI Subtitle Generator and Summarizer - Final Report
+
+## Project Overview
+
+This project builds a backend pipeline that processes educational lecture videos and generates accessibility and review materials. For each input lecture video, the system extracts audio, transcribes speech, creates subtitles, generates a concise academic summary, and evaluates the transcript and summary outputs.
+
+The current submission uses three lecture videos named `lecture_1.mp4`, `lecture_2.mp4`, and `lecture_3.mp4`. The pipeline ran successfully for all three videos and produced audio, transcript, subtitle, summary, and evaluation outputs.
+
+## Objectives
+
+The main objectives were:
+
+- Extract audio from lecture videos.
+- Transcribe lecture audio using Whisper.
+- Generate `.srt` subtitle files with timestamps.
+- Summarize lecture content using FLAN-T5.
+- Improve summary quality with transcript preprocessing.
+- Evaluate transcription and summarization outputs using WER and ROUGE.
+- Package the project with clear documentation for review.
+
+## Tools and Models Used
+
+| Component | Tool or Model |
+| --- | --- |
+| Audio extraction | FFmpeg |
+| Speech transcription | OpenAI Whisper `base` |
+| Subtitle generation | Custom Python SRT generator |
+| Summarization | `google/flan-t5-base` |
+| Transcript preprocessing | Custom `summary_preprocessor.py` |
+| WER evaluation | JiWER |
+| ROUGE evaluation | ROUGE Score |
+| Data/report handling | Python, Pandas |
+
+## Pipeline Architecture
+
+The backend is organized as a modular Python pipeline:
+
+1. `audio_extractor.py` extracts `.wav` audio from each video using FFmpeg.
+2. `transcriber.py` transcribes the audio with Whisper and returns text plus timestamped segments.
+3. `srt_generator.py` converts Whisper segments into `.srt` subtitle files.
+4. `summary_preprocessor.py` cleans transcripts, removes filler/source language, extracts important lecture points, and builds compact model input.
+5. `summarizer.py` runs FLAN-T5 summarization, validates model output, applies deterministic fallback logic if needed, saves the summary file, and returns the output path.
+6. `evaluator.py` computes WER and ROUGE when reference files are available.
+7. `run_pipeline.py` runs the full process for one video or all videos in `backend/data/raw_videos/`.
+
+## Input Videos
+
+The project currently uses three educational lecture videos:
+
+| Video | Input path |
+| --- | --- |
+| `lecture_1.mp4` | `backend/data/raw_videos/lecture_1.mp4` |
+| `lecture_2.mp4` | `backend/data/raw_videos/lecture_2.mp4` |
+| `lecture_3.mp4` | `backend/data/raw_videos/lecture_3.mp4` |
+
+Based on the generated SRT end timestamps, the selected videos appear longer than the requested 10-15 minute target. This is documented as a limitation. The implemented pipeline is generic and can process shorter 10-15 minute lecture videos using the same workflow.
+
+## FFmpeg Audio Extraction
+
+For each video, FFmpeg extracts audio into `.wav` format. The generated audio files are saved in:
+
+```text
+backend/outputs/audio/
+```
+
+Generated audio files:
+
+- `lecture_1.wav`
+- `lecture_2.wav`
+- `lecture_3.wav`
+
+## Whisper Transcription
+
+The project uses Whisper `base` for speech-to-text transcription. For each audio file, Whisper generates:
+
+- Full transcript text.
+- Timestamped segment metadata used for subtitle generation.
+
+Generated transcript files are saved in:
+
+```text
+backend/outputs/transcripts/
+```
+
+Generated transcript files:
+
+- `lecture_1_transcript.txt`
+- `lecture_2_transcript.txt`
+- `lecture_3_transcript.txt`
+
+## SRT Subtitle Generation
+
+The subtitle generation module converts Whisper timestamped segments into standard `.srt` format. Each subtitle block includes:
+
+- Subtitle index.
+- Start and end timestamp.
+- Subtitle text.
+
+Generated subtitle files are saved in:
+
+```text
+backend/outputs/subtitles/
+```
+
+Generated subtitle files:
+
+- `lecture_1.srt`
+- `lecture_2.srt`
+- `lecture_3.srt`
+
+The SRT files include timestamped subtitle entries. A more formal manual timestamp synchronization review is recommended for final production use.
+
+## FLAN-T5 Summarization
+
+The project uses `google/flan-t5-base` for lecture summarization. The summarizer is designed to produce concise academic summaries that are:
+
+- 3 to 5 complete sentences.
+- Under or close to 100 words.
+- Relevant to the lecture content.
+- Free of prompt leakage.
+- Free of first-person lecture language.
+- More polished than raw transcript fragments.
+
+Generated summary files are saved in:
+
+```text
+backend/outputs/summaries/
+```
+
+Generated summary files:
+
+- `lecture_1_summary.txt`
+- `lecture_2_summary.txt`
+- `lecture_3_summary.txt`
+
+## Summary Preprocessor
+
+The `summary_preprocessor.py` module was added to improve summary quality before FLAN-T5 generation. It is responsible for:
+
+- Cleaning transcript text.
+- Removing filler phrases and source/channel language.
+- Splitting text into candidate sentences.
+- Selecting important lecture sentences using keyword and concept scoring.
+- Extracting lecture concepts.
+- Building compact model input instead of sending the full raw transcript to FLAN-T5.
+- Providing a deterministic fallback summary if FLAN-T5 output is weak, repetitive, or leaks prompt text.
+
+This modular design keeps preprocessing separate from model loading, generation, validation, and saving logic in `summarizer.py`.
+
+## Evaluation Methodology
+
+The project evaluates outputs using:
+
+- WER for transcript quality.
+- ROUGE-1, ROUGE-2, and ROUGE-L F1 for summary quality.
+
+Evaluation results are saved in:
+
+```text
+backend/outputs/evaluation/evaluation_report.csv
+```
+
+Reference files are stored in:
+
+```text
+backend/data/reference_transcripts/
+backend/data/reference_summaries/
+```
+
+### Pseudo-Reference WER Note
+
+Official human transcripts were not available. Therefore, WER was computed using pseudo-reference transcripts derived from the generated transcripts. Because the reference transcripts are copied from generated transcripts, WER values are expected to be `0.0` and should not be interpreted as official human-reference transcription accuracy.
+
+### Manual-Reference ROUGE Note
+
+ROUGE was computed against manually written reference summaries. These summaries were written to reflect the lecture content and provide a reasonable comparison target for summary evaluation.
+
+## WER and ROUGE Results
+
+| Video Name | WER | ROUGE-1 F1 | ROUGE-2 F1 | ROUGE-L F1 |
+| --- | ---: | ---: | ---: | ---: |
+| `lecture_1.mp4` | 0.0 | 0.5437 | 0.2376 | 0.3689 |
+| `lecture_2.mp4` | 0.0 | 0.4957 | 0.1043 | 0.3077 |
+| `lecture_3.mp4` | 0.0 | 0.8143 | 0.6812 | 0.8000 |
+
+Lecture 3 has the strongest ROUGE match. Lecture 2 has lower ROUGE scores, mainly because its generated summary uses different wording from the manually written reference summary while still covering relevant derivative and rate-of-change concepts.
+
+## Limitations
+
+- The selected videos appear longer than the requested 10-15 minute target based on SRT end timestamps.
+- WER is not an official human-reference metric because pseudo-reference transcripts were used.
+- ROUGE measures word overlap and does not fully capture whether a summary is conceptually correct.
+- Whisper transcription quality may vary with audio quality, accents, background noise, and mathematical terminology.
+- FLAN-T5-base can produce weak or repetitive summaries, so validation and fallback logic are needed.
+- Subtitle timestamp accuracy was generated from Whisper segments but should be manually spot-checked for final production quality.
+
+## Future Improvements
+
+- Use official human transcripts for true WER evaluation.
+- Use multiple manually written reference summaries for more robust ROUGE evaluation.
+- Add manual timestamp spot-checking or alignment review for SRT files.
+- Test the pipeline on lecture videos that strictly meet the 10-15 minute target.
+- Add more structured topic segmentation for long lectures.
+- Compare FLAN-T5-base with larger FLAN-T5, BART, or newer summarization models.
+- Add automated tests for summary validation and SRT formatting.
+
+## Conclusion
+
+The project successfully implements a modular backend pipeline for lecture video processing. It extracts audio, transcribes speech with Whisper, generates SRT subtitles, summarizes lecture content with FLAN-T5, and produces WER and ROUGE evaluation results. The current submission is technically functional and documented honestly, with clear caveats around pseudo-reference WER evaluation and video duration mismatch.
