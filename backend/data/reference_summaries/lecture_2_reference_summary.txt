@@ -1,0 +1,1 @@
+This lecture explains derivatives as rates of change. It contrasts average and instantaneous rates using examples from motion, current, temperature gradients, and measurement sensitivity. The discussion also introduces limits, one-sided limits, and continuity as tools for reasoning about functions. Students see how derivatives connect calculus formulas to real-world change.

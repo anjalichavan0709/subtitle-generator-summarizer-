@@ -1,8 +1,5 @@
 from pathlib import Path
-from typing import List
-
-import torch
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+import re
 
 from app.config import (
     SUMMARIZATION_MODEL_NAME,
@@ -10,34 +7,48 @@ from app.config import (
     SUMMARY_OUTPUT_DIR,
 )
 from app.logger import get_logger
+from app.summary_preprocessor import (
+    build_extractive_fallback,
+    build_model_input,
+    clean_transcript_text,
+    select_important_sentences,
+)
 
 logger = get_logger(__name__)
 
 
-def clean_transcript_text(transcript_text: str) -> str:
-    if not transcript_text or not transcript_text.strip():
-        raise ValueError("Transcript text is empty. Cannot summarize empty transcript.")
-
-    return " ".join(transcript_text.split())
-
-
-def split_text_into_chunks(text: str, max_words_per_chunk: int = 500) -> List[str]:
-    words = text.split()
-
-    if not words:
-        raise ValueError("No words found in transcript after cleaning.")
-
-    chunks = []
-
-    for start_index in range(0, len(words), max_words_per_chunk):
-        chunk_words = words[start_index : start_index + max_words_per_chunk]
-        chunks.append(" ".join(chunk_words))
-
-    return chunks
+FORBIDDEN_OUTPUT_TERMS = [
+    "requirements",
+    "lecture points",
+    "clean notes",
+    "key concepts",
+    "academic summary",
+    "summary:",
+    "student summary",
+    "under 100 words",
+    "first-person",
+    "speaker",
+    "source",
+    "channel",
+    "do not copy",
+    "going to",
+    "get started",
+    "mit opencourseware",
+    "opencourseware",
+    "lecture series",
+]
 
 
 def load_summarization_model():
     logger.info("Loading summarization model: %s", SUMMARIZATION_MODEL_NAME)
+
+    try:
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    except ImportError as error:
+        raise RuntimeError(
+            "Summarization dependencies are not installed. "
+            "Install backend requirements to enable FLAN-T5 generation."
+        ) from error
 
     tokenizer = AutoTokenizer.from_pretrained(SUMMARIZATION_MODEL_NAME)
     model = AutoModelForSeq2SeqLM.from_pretrained(SUMMARIZATION_MODEL_NAME)
@@ -45,21 +56,20 @@ def load_summarization_model():
     return tokenizer, model
 
 
-def generate_model_summary(
-    text: str,
-    tokenizer,
-    model,
-    max_new_tokens: int = 120,
-    min_new_tokens: int = 35,
-) -> str:
+def generate_summary_with_model(clean_points: str, tokenizer, model) -> str:
+    try:
+        import torch
+    except ImportError as error:
+        raise RuntimeError(
+            "PyTorch is not installed. Install backend requirements to enable FLAN-T5 generation."
+        ) from error
+
     prompt = (
-        "Create a student-friendly academic summary of the lecture content below.\n"
-        "Do NOT copy transcript wording.\n"
-        "Do NOT mention the speaker, video source, or lecture introduction.\n"
-        "Explain the main concept being taught and why it matters.\n"
-        "Write 3 to 5 complete sentences under 100 words.\n\n"
-        f"Lecture content:\n{text}\n\n"
-        "Academic summary:"
+        "Create a concise student study summary from the notes below.\n"
+        "Use 3 to 5 complete sentences in one paragraph.\n"
+        "Use polished academic language and avoid copying note wording.\n\n"
+        f"{clean_points}\n\n"
+        "Summary:"
     )
 
     inputs = tokenizer(
@@ -72,16 +82,29 @@ def generate_model_summary(
     with torch.no_grad():
         output_ids = model.generate(
             **inputs,
-            max_new_tokens=max_new_tokens,
-            min_new_tokens=min_new_tokens,
+            max_new_tokens=120,
+            min_new_tokens=30,
             num_beams=4,
-            repetition_penalty=1.4,
+            repetition_penalty=1.5,
             no_repeat_ngram_size=4,
             early_stopping=True,
         )
 
-    summary = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-    return summary.strip()
+    return tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+
+def clean_summary(summary: str) -> str:
+    cleaned = summary.strip()
+
+    cleaned = re.sub(r"^(summary|student summary)\s*:\s*", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(I|i|we|We|our|Our|us|let's|Let's)\b", "", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    cleaned = cleaned.strip(" ,.-")
+
+    if cleaned:
+        cleaned = cleaned[0].upper() + cleaned[1:]
+
+    return cleaned
 
 
 def limit_summary_words(summary: str, max_words: int = MAX_SUMMARY_WORDS) -> str:
@@ -98,77 +121,98 @@ def limit_summary_words(summary: str, max_words: int = MAX_SUMMARY_WORDS) -> str
     return limited_summary
 
 
-def clean_summary_output(summary: str) -> str:
-    unwanted_phrases = [
-        "MIT OpenCourseWare",
-        "OpenCourseWare",
-        "Lecture Series",
-        "will begin",
-        "we're going to",
-        "let's get started",
-        "the speaker says",
-        "the lecturer says",
-        "this lecture will",
+def count_summary_sentences(summary: str) -> int:
+    sentences = re.split(r"(?<=[.!?])\s+", summary.strip())
+    return len([sentence for sentence in sentences if sentence.strip()])
+
+
+def has_prompt_leakage(summary: str) -> bool:
+    lowered = summary.lower()
+
+    for term in FORBIDDEN_OUTPUT_TERMS:
+        if term in lowered:
+            return True
+
+    bullet_like_patterns = [
+        r"-\s*3 to 5",
+        r"-\s*no ",
+        r"-\s*do not",
+        r"requirements\s*:",
     ]
 
-    cleaned_summary = summary
+    for pattern in bullet_like_patterns:
+        if re.search(pattern, lowered):
+            return True
 
-    for phrase in unwanted_phrases:
-        cleaned_summary = cleaned_summary.replace(phrase, "")
-
-    cleaned_summary = " ".join(cleaned_summary.split())
-    return cleaned_summary.strip()
+    return False
 
 
-def is_summary_usable(summary: str) -> bool:
+def has_first_person_language(summary: str) -> bool:
+    lowered = summary.lower()
+
+    first_person_patterns = [
+        r"\bi\b",
+        r"\bwe\b",
+        r"\bour\b",
+        r"\bus\b",
+        r"\blet's\b",
+    ]
+
+    for pattern in first_person_patterns:
+        if re.search(pattern, lowered):
+            return True
+
+    return False
+
+
+def has_raw_transcript_copy(summary: str, important_sentences: list[str]) -> bool:
+    lowered_summary = summary.lower()
+
+    for sentence in important_sentences:
+        lowered_sentence = sentence.lower().strip(" .!?")
+        sentence_words = lowered_sentence.split()
+
+        if len(sentence_words) < 12:
+            continue
+
+        if lowered_sentence in lowered_summary:
+            return True
+
+        for index in range(0, max(0, len(sentence_words) - 11)):
+            phrase = " ".join(sentence_words[index:index + 12])
+            if phrase in lowered_summary:
+                return True
+
+    return False
+
+
+def is_summary_usable(summary: str, important_sentences: list[str] | None = None) -> bool:
     if not summary:
         return False
 
-    if len(summary.split()) < 15:
+    if has_prompt_leakage(summary):
         return False
 
-    weak_phrases = [
-        "we're going to",
-        "let's get started",
-        "i'm going to",
-        "first of all",
-        "this is a lecture",
-    ]
+    if has_first_person_language(summary):
+        return False
 
-    lowered_summary = summary.lower()
+    word_count = len(summary.split())
 
-    for phrase in weak_phrases:
-        if phrase in lowered_summary:
-            return False
+    if word_count < 25:
+        return False
+
+    if word_count > MAX_SUMMARY_WORDS + 10:
+        return False
+
+    sentence_count = count_summary_sentences(summary)
+
+    if sentence_count < 3 or sentence_count > 5:
+        return False
+
+    if important_sentences and has_raw_transcript_copy(summary, important_sentences):
+        return False
 
     return True
-
-
-def keyword_based_fallback(transcript_text: str) -> str:
-    lowered_text = transcript_text.lower()
-
-    if "derivative" in lowered_text or "tangent" in lowered_text or "slope" in lowered_text:
-        return (
-            "This lecture explains the geometric meaning of derivatives. "
-            "It shows how the derivative represents the slope of a tangent line at a point on a curve. "
-            "The lecture connects secant lines, tangent lines, and limits to build an intuitive understanding of differentiation. "
-            "Students learn how calculus describes the rate of change of a function."
-        )
-
-    if "limit" in lowered_text:
-        return (
-            "This lecture introduces the concept of limits as a foundation of calculus. "
-            "It explains how values of a function behave as the input approaches a specific point. "
-            "The lecture connects limits to mathematical reasoning and problem solving. "
-            "Students learn why limits are important for understanding continuity and derivatives."
-        )
-
-    return (
-        "This educational lecture explains the main ideas of the topic in a structured way. "
-        "It introduces key concepts, develops them through examples, and connects them to practical understanding. "
-        "The lecture helps students understand the topic step by step. "
-        "It supports learning by turning detailed explanations into clear academic concepts."
-    )
 
 
 def summarize_transcript(
@@ -185,49 +229,50 @@ def summarize_transcript(
         output_path = SUMMARY_OUTPUT_DIR / output_filename
 
     cleaned_text = clean_transcript_text(transcript_text)
-    chunks = split_text_into_chunks(cleaned_text)
 
-    tokenizer, model = load_summarization_model()
+    important_sentences = select_important_sentences(
+        text=cleaned_text,
+        max_sentences=12,
+    )
 
-    chunk_summaries = []
+    clean_points = build_model_input(important_sentences)
 
-    for index, chunk in enumerate(chunks, start=1):
-        logger.info("Summarizing chunk %s of %s", index, len(chunks))
-
-        chunk_summary = generate_model_summary(
-            text=chunk,
-            tokenizer=tokenizer,
-            model=model,
-            max_new_tokens=90,
-            min_new_tokens=25,
+    if not clean_points:
+        logger.warning("No strong lecture points found. Using extractive fallback.")
+        final_summary = build_extractive_fallback(
+            important_sentences=important_sentences,
+            max_words=MAX_SUMMARY_WORDS,
         )
-
-        chunk_summary = clean_summary_output(chunk_summary)
-
-        if chunk_summary:
-            chunk_summaries.append(chunk_summary)
-
-    if chunk_summaries:
-        combined_summary_text = " ".join(chunk_summaries)
-
-        final_summary = generate_model_summary(
-            text=combined_summary_text,
-            tokenizer=tokenizer,
-            model=model,
-            max_new_tokens=120,
-            min_new_tokens=40,
-        )
-
-        final_summary = clean_summary_output(final_summary)
-        final_summary = limit_summary_words(final_summary)
-
-        if not is_summary_usable(final_summary):
-            logger.warning("Model summary was weak. Using keyword-based fallback.")
-            final_summary = keyword_based_fallback(cleaned_text)
     else:
-        logger.warning("No model summaries generated. Using keyword-based fallback.")
-        final_summary = keyword_based_fallback(cleaned_text)
+        try:
+            tokenizer, model = load_summarization_model()
 
+            model_summary = generate_summary_with_model(
+                clean_points=clean_points,
+                tokenizer=tokenizer,
+                model=model,
+            )
+
+            final_summary = clean_summary(model_summary)
+            final_summary = limit_summary_words(final_summary)
+
+            if not is_summary_usable(final_summary, important_sentences):
+                logger.warning("Model summary was weak or leaked prompt text. Using extractive fallback.")
+                final_summary = build_extractive_fallback(
+                    important_sentences=important_sentences,
+                    max_words=MAX_SUMMARY_WORDS,
+                )
+        except Exception as error:
+            logger.warning(
+                "FLAN-T5 summarization failed: %s. Using deterministic fallback summary.",
+                error,
+            )
+            final_summary = build_extractive_fallback(
+                important_sentences=important_sentences,
+                max_words=MAX_SUMMARY_WORDS,
+            )
+
+    final_summary = clean_summary(final_summary)
     final_summary = limit_summary_words(final_summary)
 
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,1 @@
+This lecture introduces derivatives through tangent and secant lines. It explains how changes in x and function values lead to the difference quotient. Worked examples connect limits with derivative formulas for functions such as 1 over x and powers of x. Students learn how geometric slope ideas become algebraic methods for differentiation.
