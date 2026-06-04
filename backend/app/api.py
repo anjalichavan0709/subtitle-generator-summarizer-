@@ -57,8 +57,6 @@ def clean_preview_text(text: str) -> str:
 
     removable_phrases = [
         "The following content is provided under a Creative Commons license.",
-        "Your support will help MIT OpenCourseWare continue to offer high quality educational resources for free.",
-        "To make a donation or to view additional materials from hundreds of MIT courses, visit MIT OpenCourseWare at ocw.mit.edu.",
     ]
 
     cleaned_text = text

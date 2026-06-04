@@ -16,8 +16,19 @@ FILLER_PHRASES = [
     "today we are going to",
     "the speaker says",
     "the lecturer says",
+    "creative commons",
+    "copyright",
+    "license",
+    "all rights reserved",
+    "visit our website",
+    "make a donation",
+    "additional materials",
+    "subscribe",
+    "source",
+    "creative commons license",
+    "to make a donation",
+    "view additional materials",
 ]
-
 
 STOPWORDS = {
     "the", "and", "for", "that", "this", "with", "from", "have", "has",
@@ -124,6 +135,7 @@ def is_useful_sentence(sentence: str) -> bool:
         "welcome",
         "speaker says",
         "lecturer says",
+        "creative commons",
     ]
 
     for pattern in weak_patterns:

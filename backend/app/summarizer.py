@@ -33,9 +33,6 @@ FORBIDDEN_OUTPUT_TERMS = [
     "do not copy",
     "going to",
     "get started",
-    "mit opencourseware",
-    "opencourseware",
-    "lecture series",
 ]
 
 
@@ -98,6 +95,7 @@ def clean_summary(summary: str) -> str:
 
     cleaned = re.sub(r"^(summary|student summary)\s*:\s*", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\b(I|i|we|We|our|Our|us|let's|Let's)\b", "", cleaned)
+    cleaned = re.sub(r"\b(creative commons|copyright|license|all rights reserved|visit our website|make a donation|additional materials|subscribe|source)\b", "", cleaned, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s+", " ", cleaned)
     cleaned = cleaned.strip(" ,.-")
 
